@@ -1,15 +1,15 @@
-# Classical Piano Composer
+# Celtic Music Composer
 
 This project allows you to train a neural network to generate midi music files that make use of a single instrument
 
 ## Requirements
 
 * Python 3.x
-* Installing the following packages using pip:
-	* Music21
-	* Keras
-	* Tensorflow
-	* h5py
+* Use pip to install requirements:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Training
 
