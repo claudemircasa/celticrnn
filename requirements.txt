@@ -1,0 +1,6 @@
+numpy
+tqdm
+keras
+tensorflow
+tensorflow-gpu
+music21

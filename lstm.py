@@ -3,6 +3,7 @@
 import glob
 import pickle
 import numpy
+from tqdm import tqdm
 from music21 import converter, instrument, note, chord
 from keras.models import Sequential
 from keras.layers import Dense
@@ -30,10 +31,11 @@ def get_notes():
     """ Get all the notes and chords from the midi files in the ./midi_songs directory """
     notes = []
 
-    for file in glob.glob("midi_songs/*.mid"):
+    files = tqdm(glob.glob("midi_songs/*.mid"))
+    for file in files:
         midi = converter.parse(file)
 
-        print("Parsing %s" % file)
+        files.set_description("Parsing %s" % file)
 
         notes_to_parse = None
 
@@ -43,7 +45,7 @@ def get_notes():
         except: # file has notes in a flat structure
             notes_to_parse = midi.flat.notes
 
-        for element in notes_to_parse:
+        for element in tqdm(notes_to_parse):
             if isinstance(element, note.Note):
                 notes.append(str(element.pitch))
             elif isinstance(element, chord.Chord):
