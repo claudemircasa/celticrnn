@@ -3,8 +3,10 @@
 import glob
 import pickle
 import numpy
+import pandas
 from tqdm import tqdm
-from music21 import converter, instrument, note, chord
+from random import randint
+from music21 import converter, instrument, note, chord, stream
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
@@ -37,19 +39,32 @@ def get_notes():
 
         files.set_description("Parsing %s" % file)
 
+        #notes_to_parse = None
         notes_to_parse = None
 
         try: # file has instrument parts
             s2 = instrument.partitionByInstrument(midi)
-            notes_to_parse = s2.parts[0].recurse() 
+            #notes_to_parse = s2.parts[0]
+            notes_to_parse = s2.parts
         except: # file has notes in a flat structure
             notes_to_parse = midi.flat.notes
 
-        for element in tqdm(notes_to_parse):
-            if isinstance(element, note.Note):
-                notes.append(str(element.pitch))
-            elif isinstance(element, chord.Chord):
-                notes.append('.'.join(str(n) for n in element.normalOrder))
+        for _instrument in notes_to_parse:
+            # the first element is the instrument midi representation
+            ri = instrument.Instrument.__subclasses__()
+            iid = ri[randint(0, len(ri)-1)]().instrumentName.replace(' ', '_')
+
+            # format is: [<instrument>, <note>, <duration>]
+            if (isinstance(_instrument, note.Note)):
+                notes.append('%s %s %s' % (iid, str(element.pitch), element.duration.quarterLength))
+            elif (isinstance(_instrument, stream.Part)):
+                if (not _instrument.getInstrument(returnDefault=False).instrumentName == None):
+                    iid = _instrument.getInstrument(returnDefault=False).instrumentName.replace(' ', '_')
+                for element in _instrument:
+                    if isinstance(element, note.Note):
+                        notes.append('%s %s %s' % (iid, str(element.pitch), element.duration.quarterLength))
+                    elif isinstance(element, chord.Chord):
+                        notes.append('%s %s %s' % (iid, ' '.join(str(n.pitch) for n in element.notes), element.duration.quarterLength))
 
     with open('data/notes', 'wb') as filepath:
         pickle.dump(notes, filepath)
