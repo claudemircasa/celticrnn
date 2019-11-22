@@ -56,7 +56,7 @@ def get_notes():
 
             # format is: [<instrument>, <note>, <duration>]
             if (isinstance(_instrument, note.Note)):
-                notes.append('%s %s %s' % (iid, str(element.pitch), element.duration.quarterLength))
+                notes.append('%s %s %s' % (iid, str(_instrument.pitch), _instrument.duration.quarterLength))
             elif (isinstance(_instrument, stream.Part)):
                 if (not _instrument.getInstrument(returnDefault=False).instrumentName == None):
                     iid = _instrument.getInstrument(returnDefault=False).instrumentName.replace(' ', '_')
@@ -64,7 +64,7 @@ def get_notes():
                     if isinstance(element, note.Note):
                         notes.append('%s %s %s' % (iid, str(element.pitch), element.duration.quarterLength))
                     elif isinstance(element, chord.Chord):
-                        notes.append('%s %s %s' % (iid, ' '.join(str(n.pitch) for n in element.notes), element.duration.quarterLength))
+                        notes.append('%s %s %s' % (iid, ' '.join(str(p) for p in element.pitches), element.duration.quarterLength))
 
     with open('data/notes', 'wb') as filepath:
         pickle.dump(notes, filepath)
