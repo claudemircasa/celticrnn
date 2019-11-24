@@ -3,7 +3,6 @@
 import glob
 import pickle
 import numpy
-import pandas
 from tqdm import tqdm
 from random import randint
 from music21 import converter, instrument, note, chord, stream
