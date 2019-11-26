@@ -38,12 +38,11 @@ def get_notes():
 
         files.set_description("Parsing %s" % file)
 
-        #notes_to_parse = None
         notes_to_parse = None
 
         try: # file has instrument parts
             s2 = instrument.partitionByInstrument(midi)
-            #notes_to_parse = s2.parts[0]
+            # notes_to_parse = s2.parts[0]
             notes_to_parse = s2.parts
         except: # file has notes in a flat structure
             notes_to_parse = midi.flat.notes
@@ -51,19 +50,20 @@ def get_notes():
         for _instrument in notes_to_parse:
             # the first element is the instrument midi representation
             ri = instrument.Instrument.__subclasses__()
-            iid = ri[randint(0, len(ri)-1)]().instrumentName.replace(' ', '_')
+            # iid = ri[randint(0, len(ri)-1)]().instrumentName.replace(' ', '_')
+            iid = ri[randint(0, len(ri)-1)]().midiProgram
 
             # format is: [<instrument>, <note>, <duration>]
             if (isinstance(_instrument, note.Note)):
-                notes.append('%s %s %s' % (iid, str(_instrument.pitch), _instrument.duration.quarterLength))
+                notes.append('%s %s %s %s' % (iid, str(_instrument.pitch), _instrument.duration.quarterLength, _instrument.offset))
             elif (isinstance(_instrument, stream.Part)):
                 if (not _instrument.getInstrument(returnDefault=False).instrumentName == None):
-                    iid = _instrument.getInstrument(returnDefault=False).instrumentName.replace(' ', '_')
+                    iid = _instrument.getInstrument(returnDefault=False).midiProgram
                 for element in _instrument:
                     if isinstance(element, note.Note):
-                        notes.append('%s %s %s' % (iid, str(element.pitch), element.duration.quarterLength))
+                        notes.append('%s %s %s %s' % (iid, str(element.pitch), element.duration.quarterLength, element.offset))
                     elif isinstance(element, chord.Chord):
-                        notes.append('%s %s %s' % (iid, ' '.join(str(p) for p in element.pitches), element.duration.quarterLength))
+                        notes.append('%s %s %s %s' % (iid, ' '.join(str(p) for p in element.pitches), element.duration.quarterLength, element.offset))
 
     with open('data/notes', 'wb') as filepath:
         pickle.dump(notes, filepath)
@@ -136,7 +136,7 @@ def train(model, network_input, network_output):
     )
     callbacks_list = [checkpoint]
 
-    model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
+    model.fit(network_input, network_output, epochs=2000, batch_size=128, callbacks=callbacks_list)
 
 if __name__ == '__main__':
     train_network()
