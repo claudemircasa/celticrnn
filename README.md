@@ -36,3 +36,14 @@ python predict.py
 ```
 
 You can run the prediction file right away using the **weights.hdf5** file
+
+Please cite this work and the original work:
+
+```
+@misc{celticrnn,
+ title   ={CelticRNN: Uma rede neural recorrente para a geração de música Celta},
+ url     ={https://github.com/claudemircasa/celticrnn/},
+ organization={IMAGO Research Group},
+ urlaccessdate={26 nov. 2019}
+}
+```
