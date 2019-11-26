@@ -146,8 +146,6 @@ def create_midi(prediction_output,n):
         _chord, _note = None, None
         # set duration of chords and notes
         if (isinstance(_notes, list) and len(_notes) > 1):
-            print(_notes)
-            print('==========================')
             _chord = chord.Chord(_notes)
             _chord = set_duration(_chord,_duration,_offset)
             instruments[_instrument].append(_chord)
@@ -163,12 +161,6 @@ def create_midi(prediction_output,n):
             current_instrument = instrument.instrumentFromMidiProgram(int(instrument_key))
         except:
             print('%s: WARNING: invalid instrument!' % instrument_key)
-            # hardcoded equivalent instrument
-            #if (instrument_key == 'Woodwind'):
-            #    current_instrument = instrument.WoodwindInstrument()
-            #elif (instrument_key == 'Keyboard'):
-            #    current_instrument = instrument.KeyboardInstrument()
-            #else:
             current_instrument = get_random_instrument()
             print('%s: INFO: selected random!' % current_instrument.instrumentName)
         current_part = stream.Part() # only one part is supported now
