@@ -32,7 +32,7 @@ def get_notes():
     """ Get all the notes and chords from the midi files in the ./midi_songs directory """
     notes = []
 
-    files = tqdm(glob.glob("midi_songs/*.mid"))
+    files = tqdm(glob.glob("dataset/*.mid"))
     for file in files:
         midi = converter.parse(file)
 
