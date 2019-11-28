@@ -21,6 +21,7 @@ CELLS = 256
 parser = argparse.ArgumentParser()
 parser.add_argument('-w', '--weights', type=str, default='model.hdf5', help='The weights')
 parser.add_argument('-n', '--number', type=int, default=1, help='Number of outputs')
+parser.add_argument('-c', '--cells', type=int, default=CELLS, help='number of lstm cells in each layer')
 args = parser.parse_args()
 
 def generate(n):
@@ -44,7 +45,7 @@ def prepare_sequences(notes, pitchnames, n_vocab):
     # map between notes and integers and back
     note_to_int = dict((note, number) for number, note in enumerate(pitchnames))
 
-    sequence_length = 100
+    sequence_length = 64
     network_input = []
     output = []
     for i in range(0, len(notes) - sequence_length, 1):
@@ -66,14 +67,14 @@ def create_network(network_input, n_vocab):
     """ create the structure of the neural network """
     model = Sequential()
     model.add(LSTM(
-        CELLS,
+        args.cells,
         input_shape=(network_input.shape[1], network_input.shape[2]),
         recurrent_dropout=0.3,
         return_sequences=True
     ))
-    model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.2,))
-    model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.1,))
-    model.add(LSTM(CELLS))
+    model.add(LSTM(args.cells, return_sequences=True, recurrent_dropout=0.2,))
+    model.add(LSTM(args.cells, return_sequences=True, recurrent_dropout=0.1,))
+    model.add(LSTM(args.cells))
     model.add(BatchNorm())
     model.add(Dropout(0.3))
     model.add(Dense(256))
@@ -180,8 +181,8 @@ def create_midi(prediction_output,n):
             current_part.append(pitch)
 
         midi_stream.append(current_part)
-        for p in midi_stream.parts:
-            p.makeMeasures(inPlace=True)
+        #for p in midi_stream.parts:
+        #    p.makeMeasures(inPlace=True)
 
     names = [s.lower() for s in sample(RandomWords().get_random_words(),2)]
     midi_stream.write('midi', fp='%s_%s.mid' % tuple(names))

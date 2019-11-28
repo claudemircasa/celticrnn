@@ -31,6 +31,7 @@ parser.add_argument('--mfile', type=int, help='number of files of dataset to use
 parser.add_argument('--ngpus', type=int, default=1, help='number of gpus to use')
 parser.add_argument('-g', '--gpu', type=int, default=0, help='gpu device')
 parser.add_argument('-m', '--weights', type=str, help='checkpoint to resume')
+parser.add_argument('-c', '--cells', type=int, default=CELLS, help='number of lstm cells in each layer')
 args = parser.parse_args()
 
 def train_network():
@@ -69,7 +70,6 @@ def get_notes():
 
         try: # file has instrument parts
             s2 = instrument.partitionByInstrument(midi)
-            # notes_to_parse = s2.parts[0]
             notes_to_parse = s2.parts
         except: # file has notes in a flat structure
             notes_to_parse = midi.flat.notes
@@ -77,10 +77,9 @@ def get_notes():
         for _instrument in notes_to_parse:
             # the first element is the instrument midi representation
             ri = instrument.Instrument.__subclasses__()
-            # iid = ri[randint(0, len(ri)-1)]().instrumentName.replace(' ', '_')
             iid = ri[randint(0, len(ri)-1)]().midiProgram
 
-            # format is: [<instrument>, <note>, <duration>]
+            # format is: [<instrument>, <note>, <duration>, <offset>]
             if (isinstance(_instrument, note.Note)):
                 notes.append('%s %s %s %s' % (iid, str(_instrument.pitch), _instrument.duration.quarterLength, _instrument.offset))
             elif (isinstance(_instrument, stream.Part)):
@@ -136,14 +135,14 @@ def create_network(network_input, n_vocab):
     else:
         model = Sequential()
         model.add(LSTM(
-            CELLS,
+            args.cells,
             input_shape=(network_input.shape[1], network_input.shape[2]),
             recurrent_dropout=0.3,
             return_sequences=True,
         ))
-        model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.2,))
-        model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.1,))
-        model.add(LSTM(CELLS))
+        model.add(LSTM(args.cells, return_sequences=True, recurrent_dropout=0.2,))
+        model.add(LSTM(args.cells, return_sequences=True, recurrent_dropout=0.1,))
+        model.add(LSTM(args.cells))
         model.add(BatchNorm())
         model.add(Dropout(0.3))
         model.add(Dense(256))
