@@ -3,21 +3,43 @@
 import glob
 import pickle
 import numpy
+import argparse
+import tensorflow as tf
 from tqdm import tqdm
-from random import randint
+from random import randint, sample
 from music21 import converter, instrument, note, chord, stream
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import LSTM
 from keras.layers import Activation
 from keras.layers import BatchNormalization as BatchNorm
-from keras.utils import np_utils
+from keras.utils import np_utils, multi_gpu_model
 from keras.callbacks import ModelCheckpoint
+
+EPOCHS = 500
+BATCHS = 512
+SEQUENCE = 64
+
+OPTIMIZER = 'adagrad'
+LOSS = 'categorical_crossentropy'
+
+parser = argparse.ArgumentParser(description='train celticrnn network.')
+parser.add_argument('--fdump', type=int, default=0, help='force generation of notes dump file')
+parser.add_argument('--mfile', type=int, help='number of files of dataset to use')
+parser.add_argument('--ngpus', type=int, default=1, help='number of gpus to use')
+parser.add_argument('-g', '--gpu', type=int, default=0, help='gpu device')
+parser.add_argument('-m', '--weights', type=str, help='checkpoint to resume')
+args = parser.parse_args()
 
 def train_network():
     """ Train a Neural Network to generate music """
-    notes = get_notes()
+    notes = None
+    if (args.fdump == 1):
+        notes = get_notes()
+    else:
+        with open('data/notes', 'rb') as filepath:
+            notes = pickle.load(filepath)
 
     # get amount of pitch names
     n_vocab = len(set(notes))
@@ -32,7 +54,11 @@ def get_notes():
     """ Get all the notes and chords from the midi files in the ./midi_songs directory """
     notes = []
 
-    files = tqdm(glob.glob("dataset/*.mid"))
+    if (args.mfile):
+        files = tqdm(sample(glob.glob('dataset/*.mid'), args.mfile))
+    else:
+        files = tqdm(glob.glob('dataset/*.mid'))
+
     for file in files:
         midi = converter.parse(file)
 
@@ -72,7 +98,7 @@ def get_notes():
 
 def prepare_sequences(notes, n_vocab):
     """ Prepare the sequences used by the Neural Network """
-    sequence_length = 100
+    sequence_length = SEQUENCE
 
     # get all pitch names
     pitchnames = sorted(set(item for item in notes))
@@ -103,26 +129,39 @@ def prepare_sequences(notes, n_vocab):
 
 def create_network(network_input, n_vocab):
     """ create the structure of the neural network """
-    model = Sequential()
-    model.add(LSTM(
-        512,
-        input_shape=(network_input.shape[1], network_input.shape[2]),
-        recurrent_dropout=0.3,
-        return_sequences=True
-    ))
-    model.add(LSTM(512, return_sequences=True, recurrent_dropout=0.3,))
-    model.add(LSTM(512))
-    model.add(BatchNorm())
-    model.add(Dropout(0.3))
-    model.add(Dense(256))
-    model.add(Activation('relu'))
-    model.add(BatchNorm())
-    model.add(Dropout(0.3))
-    model.add(Dense(n_vocab))
-    model.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+    nmodel = None
+    if (args.weights):
+        nmodel = load_model(args.weights)
+    else:
+        model = Sequential()
+        model.add(LSTM(
+            256,
+            input_shape=(network_input.shape[1], network_input.shape[2]),
+            recurrent_dropout=0.3,
+            return_sequences=True,
+        ))
+        model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.2,))
+        model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.1,))
+        model.add(LSTM(256))
+        model.add(BatchNorm())
+        model.add(Dropout(0.3))
+        model.add(Dense(256))
+        model.add(Activation('tanh'))
+        model.add(BatchNorm())
+        model.add(Dropout(0.3))
+        model.add(Dense(n_vocab))
+        model.add(Activation('softmax'))
 
-    return model
+        if (args.ngpus > 1):
+            print('INFO: using %d devices' % args.ngpus)
+            parallel_model = multi_gpu_model(model, gpus=2)
+            parallel_model.compile(loss=LOSS, optimizer=OPTIMIZER)
+            nmodel = parallel_model
+        else:
+            print('INFO: using only one device')
+            model.compile(loss=LOSS, optimizer=OPTIMIZER)
+            nmodel = model
+    return nmodel
 
 def train(model, network_input, network_output):
     """ train the neural network """
@@ -136,7 +175,9 @@ def train(model, network_input, network_output):
     )
     callbacks_list = [checkpoint]
 
-    model.fit(network_input, network_output, epochs=2000, batch_size=128, callbacks=callbacks_list)
+    model.fit(network_input, network_output, epochs=EPOCHS, batch_size=BATCHS, callbacks=callbacks_list)
 
 if __name__ == '__main__':
-    train_network()
+    with tf.device('/gpu:%d' % args.gpu):
+        print('INFO: using gpu at index %d' % args.gpu)
+        train_network()

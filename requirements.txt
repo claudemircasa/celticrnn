@@ -4,3 +4,4 @@ keras
 tensorflow
 tensorflow-gpu
 music21
+random-word

@@ -4,14 +4,18 @@ import pickle
 import numpy
 import argparse
 from copy import copy
-from random import randint
+from random import randint,sample
 from music21 import instrument, note, stream, chord, meter
+from random_word import RandomWords
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import LSTM
 from keras.layers import BatchNormalization as BatchNorm
 from keras.layers import Activation
+
+OPTIMIZER = 'adagrad'
+LOSS = 'categorical_crossentropy'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-w', '--weights', type=str, default='model.hdf5', help='The weights')
@@ -61,22 +65,23 @@ def create_network(network_input, n_vocab):
     """ create the structure of the neural network """
     model = Sequential()
     model.add(LSTM(
-        512,
+        256,
         input_shape=(network_input.shape[1], network_input.shape[2]),
         recurrent_dropout=0.3,
         return_sequences=True
     ))
-    model.add(LSTM(512, return_sequences=True, recurrent_dropout=0.3,))
-    model.add(LSTM(512))
+    model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.2,))
+    model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.1,))
+    model.add(LSTM(256))
     model.add(BatchNorm())
     model.add(Dropout(0.3))
     model.add(Dense(256))
-    model.add(Activation('relu'))
+    model.add(Activation('tanh'))
     model.add(BatchNorm())
     model.add(Dropout(0.3))
     model.add(Dense(n_vocab))
     model.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+    model.compile(loss=LOSS, optimizer=OPTIMIZER)
 
     # Load the weights to each node
     model.load_weights(args.weights)
@@ -177,7 +182,8 @@ def create_midi(prediction_output,n):
         for p in midi_stream.parts:
             p.makeMeasures(inPlace=True)
 
-    midi_stream.write('midi', fp='test_output_%s.mid' % str(n))
+    names = sample(RandomWords().get_random_words(), k=2)
+    midi_stream.write('midi', fp='%s %s.mid' % names)
 
 if __name__ == '__main__':
     for n in range(0, args.number):
