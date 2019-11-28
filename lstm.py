@@ -20,6 +20,7 @@ from keras.callbacks import ModelCheckpoint
 EPOCHS = 500
 BATCHS = 512
 SEQUENCE = 64
+CELLS = 256
 
 OPTIMIZER = 'adagrad'
 LOSS = 'categorical_crossentropy'
@@ -135,14 +136,14 @@ def create_network(network_input, n_vocab):
     else:
         model = Sequential()
         model.add(LSTM(
-            256,
+            CELLS,
             input_shape=(network_input.shape[1], network_input.shape[2]),
             recurrent_dropout=0.3,
             return_sequences=True,
         ))
-        model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.2,))
-        model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.1,))
-        model.add(LSTM(256))
+        model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.2,))
+        model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.1,))
+        model.add(LSTM(CELLS))
         model.add(BatchNorm())
         model.add(Dropout(0.3))
         model.add(Dense(256))

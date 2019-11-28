@@ -16,6 +16,7 @@ from keras.layers import Activation
 
 OPTIMIZER = 'adagrad'
 LOSS = 'categorical_crossentropy'
+CELLS = 256
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-w', '--weights', type=str, default='model.hdf5', help='The weights')
@@ -65,14 +66,14 @@ def create_network(network_input, n_vocab):
     """ create the structure of the neural network """
     model = Sequential()
     model.add(LSTM(
-        256,
+        CELLS,
         input_shape=(network_input.shape[1], network_input.shape[2]),
         recurrent_dropout=0.3,
         return_sequences=True
     ))
-    model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.2,))
-    model.add(LSTM(256, return_sequences=True, recurrent_dropout=0.1,))
-    model.add(LSTM(256))
+    model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.2,))
+    model.add(LSTM(CELLS, return_sequences=True, recurrent_dropout=0.1,))
+    model.add(LSTM(CELLS))
     model.add(BatchNorm())
     model.add(Dropout(0.3))
     model.add(Dense(256))
@@ -182,8 +183,8 @@ def create_midi(prediction_output,n):
         for p in midi_stream.parts:
             p.makeMeasures(inPlace=True)
 
-    names = sample(RandomWords().get_random_words(), k=2)
-    midi_stream.write('midi', fp='%s %s.mid' % names)
+    names = [s.lower() for s in sample(RandomWords().get_random_words(),2)]
+    midi_stream.write('midi', fp='%s_%s.mid' % tuple(names))
 
 if __name__ == '__main__':
     for n in range(0, args.number):
