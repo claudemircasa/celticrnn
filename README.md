@@ -2,7 +2,7 @@
 
 This project allows you to train a neural network to generate midi music files that make use of multiple instruments
 
-**NOTE**: To see refined results, go to [Celtic Memories](https://soundcloud.com/claudemircasa/jockey-bar-hand), otherwise see the samples in samples folder.
+**NOTE**: To see refined results, go to [Celtic Memories](https://soundcloud.com/claudemircasa/sets/celtic-memories), otherwise see the samples in samples folder.
 
 ## Requirements
 
