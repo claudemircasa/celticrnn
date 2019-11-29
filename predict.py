@@ -3,6 +3,7 @@
 import pickle
 import numpy
 import argparse
+from tqdm import tqdm
 from copy import copy
 from random import randint,sample
 from music21 import instrument, note, stream, chord, meter
@@ -22,6 +23,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-w', '--weights', type=str, default='model.hdf5', help='The weights')
 parser.add_argument('-n', '--number', type=int, default=1, help='Number of outputs')
 parser.add_argument('-c', '--cells', type=int, default=CELLS, help='number of lstm cells in each layer')
+parser.add_argument('-o', '--optimizer', type=int, default=1, help='active stream optimization')
 args = parser.parse_args()
 
 def generate(n):
@@ -160,7 +162,7 @@ def create_midi(prediction_output,n):
             _note = note.Note(_notes[0])
             _note = set_duration(_note,_duration,_offset)
             instruments[_instrument].append(_note)
-    
+
     midi_stream = stream.Score()
     for instrument_key in instruments.keys():
         current_instrument = None
@@ -181,12 +183,16 @@ def create_midi(prediction_output,n):
             current_part.append(pitch)
 
         midi_stream.append(current_part)
-        #for p in midi_stream.parts:
-        #    p.makeMeasures(inPlace=True)
+        if args.optimizer:
+            for p in midi_stream.parts:
+                p.makeMeasures(inPlace=True)
+
+    if args.optimizer:
+        midi_stream.makeNotation(inPlace=True)
 
     names = [s.lower() for s in sample(RandomWords().get_random_words(),2)]
     midi_stream.write('midi', fp='%s_%s.mid' % tuple(names))
 
 if __name__ == '__main__':
-    for n in range(0, args.number):
+    for n in tqdm(range(0, args.number)):
         generate(n)
